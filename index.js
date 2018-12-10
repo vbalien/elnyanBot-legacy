@@ -12,11 +12,11 @@ const bot = new TelegramBot(TOKEN);
 bot.setWebHook(`${url}/bot${TOKEN}`);
 
 const app = new Koa();
-app.use(bodyParser);
+app.use(bodyParser());
 
-app.use(_.post(`/bot${TOKEN}`, (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
+app.use(_.post(`/bot${TOKEN}`, ctx => {
+  bot.processUpdate(ctx.request.body);
+  ctx.status = 200;
 }));
 
 app.listen(port, () => {
