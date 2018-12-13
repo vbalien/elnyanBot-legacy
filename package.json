@@ -1,8 +1,11 @@
 {
   "dependencies": {
+    "axios": "^0.18.0",
     "koa": "^2.6.2",
     "koa-bodyparser": "^4.2.1",
     "koa-route": "^3.2.0",
+    "moment": "^2.22.2",
+    "mongoose": "^5.3.16",
     "node-telegram-bot-api": "^0.30.0"
   }
 }
