@@ -64,9 +64,9 @@ const buttons = currentDay => ({
   inline_keyboard: [
     dayList.map((el, idx) => ({
       text: idx === currentDay ? `*${el}` : el,
-      callback_data: `/anitable ${idx}`
+      callback_data: `/anitable -w ${idx}`
     })),
-    [{ text: '자막받기', callback_data: `/anitable sublist ${currentDay}` }]
+    [{ text: '자막받기', callback_data: `/anitable -l -w ${currentDay}` }]
   ]
 })
 const getAnitable = async function (arg) {
@@ -81,7 +81,6 @@ ${data.reduce((prev, curr) => `${prev}${curr.t.slice(0, 2).concat(':', curr.t.sl
       reply_markup: {
         ...buttons(day)
       },
-      parse_mode: 'markdown'
     }
   }
 }
@@ -92,11 +91,10 @@ const getSublist = async function (day) {
   return {
     text: '자막받을 애니를 선택해주세요.',
     options: {
-      parse_mode: 'markdown',
       reply_markup: {
         inline_keyboard: [
-          ...data.map(el => [{ text: `${el.t.slice(0, 2).concat(':', el.t.slice(2, 4))} - ${el.s}`, callback_data: `/anitable selsub ${el.i}` }]),
-          [{ text: '돌아가기', callback_data: `/anitable ${day}` }]
+          ...data.map(el => [{ text: `${el.t.slice(0, 2).concat(':', el.t.slice(2, 4))} - ${el.s}`, callback_data: `/anitable -g ${el.i}` }]),
+          [{ text: '돌아가기', callback_data: `/anitable -w ${day}` }]
         ]
       }
     }
@@ -143,10 +141,9 @@ const selSub = async function (i) {
   return {
     text: '에피소드를 선택해주세요.',
     options: {
-      parse_mode: 'markdown',
       reply_markup: {
         inline_keyboard: [
-          ...(await Subtitle.find({ i })).map(el => [{ text: `${el.episode / 10}화 - ${el.author} ${moment(el.releaseDate).locale('ko').fromNow()}`, callback_data: `/anitable downsub ${el._id}` }]),
+          ...(await Subtitle.find({ i })).map(el => [{ text: `${el.episode / 10}화 - ${el.author} ${moment(el.releaseDate).locale('ko').fromNow()}`, callback_data: `/anitable -d ${el._id}` }]),
           [{ text: '처음으로', callback_data: `/anitable` }]
         ]
       }
@@ -176,7 +173,6 @@ const downSub = async function (_id) {
   return {
     text: '파일 목록',
     options: {
-      parse_mode: 'markdown',
       reply_markup: {
         inline_keyboard: [
           ...buttons,
@@ -187,31 +183,30 @@ const downSub = async function (_id) {
   }
 }
 
-module.exports = async function (context, arg) {
-  const args = arg.split(' ')
-  if (args[0] === 'sublist') {
-    const outmsg = await getSublist(args[1])
+module.exports = async (context, options) => {
+  if (options.subtitle_list && options.current_week) {
+    const outmsg = await getSublist(options.current_week)
     context.bot.editMessageText(outmsg.text, {
       chat_id: context.callbackQuery.message.chat.id,
       message_id: context.callbackQuery.message.message_id,
       ...outmsg.options
     })
-  } else if (args[0] === 'selsub') {
-    const outmsg = await selSub(args[1])
+  } else if (options.get_subtitle) {
+    const outmsg = await selSub(options.get_subtitle)
     context.bot.editMessageText(outmsg.text, {
       chat_id: context.callbackQuery.message.chat.id,
       message_id: context.callbackQuery.message.message_id,
       ...outmsg.options
     })
-  } else if (args[0] === 'downsub') {
-    const outmsg = await downSub(args[1])
+  } else if (options.download_subtitle) {
+    const outmsg = await downSub(options.download_subtitle)
     context.bot.editMessageText(outmsg.text, {
       chat_id: context.callbackQuery.message.chat.id,
       message_id: context.callbackQuery.message.message_id,
       ...outmsg.options
     })
   } else {
-    const outmsg = await getAnitable(arg)
+    const outmsg = await getAnitable(options.current_week)
     context.msg
       ? context.bot.sendMessage(context.msg.chat.id, outmsg.text, outmsg.options)
       : context.bot.editMessageText(outmsg.text, {
