@@ -1,15 +1,10 @@
 const axios = require('axios')
-const mongoose = require('mongoose')
 const moment = require('moment')
 const url = require('url')
 const path = require('path')
+const mongoose = require('mongoose')
+const delBtnOption = require('../index').delBtnOption
 
-mongoose.connect('mongodb://localhost/anitable', { useNewUrlParser: true })
-const db = mongoose.connection
-db.on('error', console.error.bind(console, 'connection error:'))
-db.once('open', function () {
-  // Connected
-})
 const subtitleSchema = new mongoose.Schema({
   i: Number,
   author: String,
@@ -207,6 +202,10 @@ module.exports = async (context, options) => {
     })
   } else {
     const outmsg = await getAnitable(options.current_week)
+    outmsg.options.reply_markup.inline_keyboard = [
+      ...outmsg.options.reply_markup.inline_keyboard,
+      delBtnOption().reply_markup.inline_keyboard[0]
+    ]
     context.msg
       ? context.bot.sendMessage(context.msg.chat.id, outmsg.text, outmsg.options)
       : context.bot.editMessageText(outmsg.text, {
